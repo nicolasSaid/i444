@@ -188,28 +188,34 @@ export class LendingLibrary {
     	      return Errors.errResult('bad type', 'BAD_TYPE', 'search');
     }
 
-    var it_split: string[] = req.search.split(/[\W ]+/);
+    var it: string[] = req.search.split(/[\W ]+/);
     //console.log(it);
-    var it: string[] = [];
+    //var it: string[] = [];
     
 
-    for(const x of it_split){
+    /*for(const x of it_split){
         if(x.length > 1){
 	    it.push(x);
 	}
-    }
+    }*/
 
     //console.log(it);
 
 
     
-    if(it.length === 0){
+    /*if(it.length === 0){
         return Errors.errResult('Missing', 'BAD_REQ', 'search');
-    }
+    }*/
+
+    var words: number = 0;
 
     var start: boolean = false;
     var arr: string[] = [];
     for(const x of it){
+    	if(x.length <= 1){
+	    continue;
+	}
+	words++;
     	//console.log(arr);
     	/*if(typeof this.wordToId[x.toLowerCase()] === "undefined"){
 	       return Errors.errResult('Bad req', 'BAD_REQ', 'search');
@@ -222,9 +228,9 @@ export class LendingLibrary {
 	}
     }
 
-    /*if(arr.length <= 0){
+    if(words <= 0){
         return Errors.errResult('bad req', 'BAD_REQ', 'search');
-    }*/
+    }
 
     var ret: XBook[] = [];
 
@@ -245,7 +251,38 @@ export class LendingLibrary {
    */
   checkoutBook(req: Record<string, any>) : Errors.Result<void> {
     //TODO
-    return Errors.errResult('TODO');  //placeholder
+    //console.log(this.idToBook);
+    //console.log("\n");
+    //console.log(req);
+    if(typeof req.isbn === "undefined"){
+        return Errors.errResult('missing args', 'MISSING', 'isbn');
+    }
+    if(typeof req.patronId === "undefined"){
+        return Errors.errResult('missing args', 'MISSING', 'patronId');
+    }
+    
+    if(typeof this.idToBook[req.isbn] === "undefined" || this.idToBook[req.isbn].nCopies <= 0){
+        return Errors.errResult('bad args', 'BAD_REQ', 'isbn');
+    }
+
+    if(typeof this.patronToBooks[req.patronId] === "undefined"){
+        this.patronToBooks[req.patronId] = [];
+    }
+
+    if(this.patronToBooks[req.patronId].includes(req.isbn)){
+	return Errors.errResult('bad args', 'BAD_REQ', 'isbn');
+    }
+    this.patronToBooks[req.patronId].push(req.isbn);
+
+    if(typeof this.bookToPatrons[req.isbn] === "undefined"){
+        this.bookToPatrons[req.isbn] = [];
+    }
+    this.bookToPatrons[req.isbn].push(req.patronId);
+    this.idToBook[req.isbn].nCopies--;
+    
+
+
+    return Errors.okResult(undefined);  //placeholder
   }
 
   /** Set up patron req.patronId to returns book req.isbn.
