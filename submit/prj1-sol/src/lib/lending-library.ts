@@ -147,6 +147,9 @@ export class LendingLibrary {
     }
     if(typeof this.idToBook[req.isbn] === "undefined"){
 	for(const x of req.title.split(/[\W ]+/)){
+	     if(x.length <= 1){
+	         continue;
+	     }
 	     if(typeof this.wordToId[x.toLowerCase()] == "undefined"){
 	         this.wordToId[x.toLowerCase()] = [req.isbn];
 	     }else if(!this.wordToId[x.toLowerCase()].includes(req.isbn)){
@@ -180,9 +183,15 @@ export class LendingLibrary {
    */
   findBooks(req: Record<string, any>) : Errors.Result<XBook[]> {
     //TODO
+
+    if(typeof req.search !== "string"){
+    	      return Errors.errResult('bad type', 'BAD_TYPE', 'search');
+    }
+
     var it_split: string[] = req.search.split(/[\W ]+/);
     //console.log(it);
     var it: string[] = [];
+    
 
     for(const x of it_split){
         if(x.length > 1){
