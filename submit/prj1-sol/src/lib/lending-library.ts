@@ -293,8 +293,33 @@ export class LendingLibrary {
    *    BAD_REQ error on business rule violation.
    */
   returnBook(req: Record<string, any>) : Errors.Result<void> {
-    //TODO 
-    return Errors.errResult('TODO');  //placeholder
+    //TODO
+    //console.log(req);
+    if(typeof req.patronId === "undefined"){
+        return Errors.errResult('missing args', 'MISSING', 'patronId');
+    }
+    if(typeof req.isbn === "undefined"){
+        return Errors.errResult('missing args', 'MISSING', 'patronId');
+    }
+
+    if(typeof this.idToBook[req.isbn] === "undefined"){
+        return Errors.errResult('bad arg', 'BAD_REQ', 'isbn');
+    }
+
+    if(typeof this.patronToBooks[req.patronId] === "undefined"){
+        return Errors.errResult('missing book', 'BAD_REQ', 'patronId');
+    }
+
+    if(this.patronToBooks[req.patronId].indexOf(req.isbn) === -1){
+        return Errors.errResult('missing book', 'BAD_REQ', 'patronId');
+    }
+
+    this.patronToBooks[req.patronId] = this.patronToBooks[req.patronId].filter(e => e != req.isbn);
+    this.bookToPatrons[req.isbn] = this.bookToPatrons[req.isbn].filter(e => e != req.patronId);
+    this.idToBook[req.isbn].nCopies++;
+    
+
+    return Errors.okResult(undefined);  //placeholder
   }
   
 }
