@@ -146,11 +146,11 @@ export class LendingLibrary {
     	  return Errors.errResult('error', 'BAD_TYPE', 'nCopies');
     }
     if(typeof this.idToBook[req.isbn] === "undefined"){
-	for(const x of req.title.split(/[ ]+/)){
-	     if(typeof this.wordToId[x] == "undefined"){
-	         this.wordToId[x] = [req.isbn];
-	     }else if(!this.wordToId[x].includes(req.isbn)){
-		 this.wordToId[x].push(req.isbn);
+	for(const x of req.title.split(/[\W ]+/)){
+	     if(typeof this.wordToId[x.toLowerCase()] == "undefined"){
+	         this.wordToId[x.toLowerCase()] = [req.isbn];
+	     }else if(!this.wordToId[x.toLowerCase()].includes(req.isbn)){
+		 this.wordToId[x.toLowerCase()].push(req.isbn);
 	     }
 	}
 	this.idToBook[req.isbn] = newbook;
@@ -165,7 +165,7 @@ export class LendingLibrary {
     }
 
 
-
+    //console.log(this.wordToId);
     return Errors.okResult(newbook);  //placeholder
   }
 
@@ -180,7 +180,50 @@ export class LendingLibrary {
    */
   findBooks(req: Record<string, any>) : Errors.Result<XBook[]> {
     //TODO
-    return Errors.errResult('TODO');  //placeholder
+    var it_split: string[] = req.search.split(/[\W ]+/);
+    //console.log(it);
+    var it: string[] = [];
+
+    for(const x of it_split){
+        if(x.length > 1){
+	    it.push(x);
+	}
+    }
+
+    //console.log(it);
+
+
+    
+    if(it.length === 0){
+        return Errors.errResult('Missing', 'BAD_REQ', 'search');
+    }
+
+    var start: boolean = false;
+    var arr: string[] = [];
+    for(const x of it){
+    	//console.log(arr);
+    	/*if(typeof this.wordToId[x.toLowerCase()] === "undefined"){
+	       return Errors.errResult('Bad req', 'BAD_REQ', 'search');
+	}*/
+        if(start === false && typeof this.wordToId[x.toLowerCase()] !== "undefined"){
+	       start = true;
+	       arr = this.wordToId[x.toLowerCase()];
+	} else if(typeof this.wordToId[x.toLowerCase()] !== "undefined"){
+	       arr = arr.filter(e => this.wordToId[x.toLowerCase()].includes(e));
+	}
+    }
+
+    /*if(arr.length <= 0){
+        return Errors.errResult('bad req', 'BAD_REQ', 'search');
+    }*/
+
+    var ret: XBook[] = [];
+
+    for(const x of arr){
+        ret.push(this.idToBook[x]);
+    }
+    
+    return Errors.okResult(ret.sort((x,y)=>x.title.localeCompare(y.title)));  //placeholder
   }
 
 
