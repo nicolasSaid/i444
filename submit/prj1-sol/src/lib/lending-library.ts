@@ -82,6 +82,9 @@ export class LendingLibrary {
     
     if(typeof this.idToBook[newbook.isbn] === "undefined"){
     	var wordsDivided: string[] = divideString(newbook.title, newbook.authors);
+	//console.log(req);
+	//console.log('\n\n\n');
+	//console.log(wordsDivided);
 	for(const x of wordsDivided){
 	     if(x.length <= 1){
 	         continue;
@@ -120,6 +123,9 @@ export class LendingLibrary {
   findBooks(req: Record<string, any>) : Errors.Result<XBook[]> {
     //TODO
 
+    if(typeof req.search === "undefined"){
+              return Errors.errResult('property search is required', 'MISSING', 'search');
+    }
     if(typeof req.search !== "string"){
     	      return Errors.errResult('property search must be of type string', 'BAD_TYPE', 'search');
     }
@@ -428,8 +434,14 @@ function booksEqual(book1: Book, book2: Book): Errors.Result<void> {
 function divideString( x: string, y?: string[]): string[] {
     var ret: string[] = x.split(/[\W ]+/);
     if(typeof y !== "undefined"){
-        ret.push(...y);
+    	//y.map(element => element.toLowerCase());
+	for(const i of y){
+	    ret.push(... (i.split(/[\W ]+/)));
+	}
     }
+
+    //console.log(ret);
+    //console.log('\n\n');
 
     return ret.filter(element => element.length > 1);
 }
