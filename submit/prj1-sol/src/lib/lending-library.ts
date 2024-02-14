@@ -60,13 +60,6 @@ export class LendingLibrary {
     
   }
 
-  booksEqual(book1: Book, book2: Book): boolean {
-     if(book1.isbn === book2.isbn && (book1.authors.length == book2.authors.length && book1.authors.every((V,i) => V == book2.authors[i])) && book1.title == book2.title && book1.pages == book2.pages && book1.year == book2.year && book1.publisher == book2.publisher){
-     		   return true;
-     }
-     return false;
-  }
-
   /** Add one-or-more copies of book represented by req to this library.
    *
    *  Errors:
@@ -79,89 +72,32 @@ export class LendingLibrary {
   addBook(req: Record<string, any>): Errors.Result<XBook> {
     //TODO
  
-
-    if(typeof req.title === "undefined"){
-    	  return Errors.errResult('error', 'MISSING', 'title');
-    }else if(typeof req.title !== "string"){
-    	  return Errors.errResult('error', 'BAD_TYPE', 'title');
+    var errorcheck: Errors.Result<XBook> = verifyReq(req);
+    if(errorcheck.isOk === false){
+        return errorcheck;
     }
 
-    //console.log(req.authors);
-    //console.log(typeof req.authors == typeof []);
-
-    if(typeof req.authors === "undefined"){
-    	  return Errors.errResult('error', 'MISSING', 'authors');
-    }else if((typeof req.authors !== typeof []) || req.authors.length <= 0){
-    	  return Errors.errResult('error', 'BAD_TYPE', 'authors');
-    }else{
-	for(var e of req.authors){
-		if(typeof e !== "string"){
-			  return Errors.errResult('error', 'BAD_TYPE', 'authors');
-		}
-	}
-    }
-
-    if(typeof req.isbn === "undefined"){
-    	  return Errors.errResult('error', 'MISSING', 'isbn');
-    } else if(typeof req.isbn !== "string"){
-      	  return Errors.errResult('error', 'BAD_TYPE', 'isbn');
-    }
-
-    if(typeof req.pages === "undefined"){
-    	  return Errors.errResult('error', 'MISSING', 'pages');
-    } else if(typeof req.pages !== "number"){
-      	  return Errors.errResult('error', 'BAD_TYPE', 'pages');
-    }
-
-    if(typeof req.year === "undefined"){
-    	  return Errors.errResult('error', 'MISSING', 'year');
-    } else if(typeof req.year !== "number"){
-      	  return Errors.errResult('error', 'BAD_TYPE', 'year');
-    }
-
-    if(typeof req.publisher === "undefined"){
-    	  return Errors.errResult('error', 'MISSING', 'publisher');
-    } else if(typeof req.publisher !== "string"){
-    	  return Errors.errResult('error', 'BAD_TYPE', 'publisher');
-    }
-
-    var newbook: XBook = {
-    	     isbn: req.isbn,
-	     title: req.title,
-	     authors: req.authors,
-	     pages: req.pages,
-	     publisher: req.publisher,
-	     year: req.year,
-	     nCopies: 1
-    };
-    //console.log(req.nCopies);
-    if(typeof req.nCopies === "number"){
-    	//console.log("number");
-    	if(req.nCopies <= 0 || !Number.isInteger(req.nCopies)){
-	    return Errors.errResult('error', 'BAD_REQ', 'nCopies');
-	}
-    	newbook.nCopies = req.nCopies;
-    }else if(typeof req.nCopies !== "undefined"){
-    	  //console.log("not number");
-    	  return Errors.errResult('error', 'BAD_TYPE', 'nCopies');
-    }
-    if(typeof this.idToBook[req.isbn] === "undefined"){
-	for(const x of req.title.split(/[\W ]+/)){
+    var newbook: XBook = errorcheck.val;
+    
+    
+    if(typeof this.idToBook[newbook.isbn] === "undefined"){
+    	var wordsDivided: string[] = divideString(newbook.title, newbook.authors);
+	for(const x of wordsDivided){
 	     if(x.length <= 1){
 	         continue;
 	     }
 	     if(typeof this.wordToId[x.toLowerCase()] == "undefined"){
-	         this.wordToId[x.toLowerCase()] = [req.isbn];
+	         this.wordToId[x.toLowerCase()] = [newbook.isbn];
 	     }else if(!this.wordToId[x.toLowerCase()].includes(req.isbn)){
-		 this.wordToId[x.toLowerCase()].push(req.isbn);
+		 this.wordToId[x.toLowerCase()].push(newbook.isbn);
 	     }
 	}
-	this.idToBook[req.isbn] = newbook;
+	this.idToBook[newbook.isbn] = newbook;
     
     } else{
-	if(this.booksEqual(this.idToBook[req.isbn], newbook)){
-	    this.idToBook[req.isbn].nCopies = this.idToBook[req.isbn].nCopies + newbook.nCopies;
-	    newbook = this.idToBook[req.isbn];
+	if(booksEqual(this.idToBook[newbook.isbn], newbook)){
+	    this.idToBook[newbook.isbn].nCopies = this.idToBook[newbook.isbn].nCopies + newbook.nCopies;
+	    newbook = this.idToBook[newbook.isbn];
 	} else {
 	    return Errors.errResult('error', 'BAD_REQ');
 	}
@@ -327,10 +263,97 @@ export class LendingLibrary {
 
 /********************** Domain Utility Functions ***********************/
 
-
 //TODO: add domain-specific utility functions or classes.
+
+function verifyReq(req: Record<string, any>): Errors.Result<XBook> {
+	 if(typeof req.title === "undefined"){
+    	  return Errors.errResult('error', 'MISSING', 'title');
+    }else if(typeof req.title !== "string"){
+    	  return Errors.errResult('error', 'BAD_TYPE', 'title');
+    }
+
+    //console.log(req.authors);
+    //console.log(typeof req.authors == typeof []);
+
+    if(typeof req.authors === "undefined"){
+    	  return Errors.errResult('error', 'MISSING', 'authors');
+    }else if((typeof req.authors !== typeof []) || req.authors.length <= 0){
+    	  return Errors.errResult('error', 'BAD_TYPE', 'authors');
+    }else{
+	for(var e of req.authors){
+		if(typeof e !== "string"){
+			  return Errors.errResult('error', 'BAD_TYPE', 'authors');
+		}
+	}
+    }
+
+    if(typeof req.isbn === "undefined"){
+    	  return Errors.errResult('error', 'MISSING', 'isbn');
+    } else if(typeof req.isbn !== "string"){
+      	  return Errors.errResult('error', 'BAD_TYPE', 'isbn');
+    }
+
+    if(typeof req.pages === "undefined"){
+    	  return Errors.errResult('error', 'MISSING', 'pages');
+    } else if(typeof req.pages !== "number"){
+      	  return Errors.errResult('error', 'BAD_TYPE', 'pages');
+    }
+
+    if(typeof req.year === "undefined"){
+    	  return Errors.errResult('error', 'MISSING', 'year');
+    } else if(typeof req.year !== "number"){
+      	  return Errors.errResult('error', 'BAD_TYPE', 'year');
+    }
+
+    if(typeof req.publisher === "undefined"){
+    	  return Errors.errResult('error', 'MISSING', 'publisher');
+    } else if(typeof req.publisher !== "string"){
+    	  return Errors.errResult('error', 'BAD_TYPE', 'publisher');
+    }
+
+    var newbook: XBook = {
+    	     isbn: req.isbn,
+	     title: req.title,
+	     authors: req.authors,
+	     pages: req.pages,
+	     publisher: req.publisher,
+	     year: req.year,
+	     nCopies: 1
+    };
+    //console.log(req.nCopies);
+    if(typeof req.nCopies === "number"){
+    	//console.log("number");
+    	if(req.nCopies <= 0 || !Number.isInteger(req.nCopies)){
+	    return Errors.errResult('error', 'BAD_REQ', 'nCopies');
+	}
+    	newbook.nCopies = req.nCopies;
+    }else if(typeof req.nCopies !== "undefined"){
+    	  //console.log("not number");
+    	  return Errors.errResult('error', 'BAD_TYPE', 'nCopies');
+    }
+
+    return Errors.okResult(newbook);
+    
+}
+
+function booksEqual(book1: Book, book2: Book): boolean {
+   if(book1.isbn === book2.isbn && (book1.authors.length == book2.authors.length && book1.authors.every((V,i) => V == book2.authors[i])) && book1.title == book2.title && book1.pages == book2.pages && book1.year == book2.year && book1.publisher == book2.publisher){
+     	return true;
+   }
+   return false;
+}
+
+
 
 /********************* General Utility Functions ***********************/
 
 //TODO: add general utility functions or classes.
 
+function divideString( x: string, y?: string[]): string[] {
+    var ret: string[] = x.split(/[\W ]+/);
+    if(typeof y !== "undefined"){
+        ret.push(...y);
+    }
+
+    return ret;
+}
