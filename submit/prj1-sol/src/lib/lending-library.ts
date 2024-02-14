@@ -95,12 +95,12 @@ export class LendingLibrary {
 	this.idToBook[newbook.isbn] = newbook;
     
     } else{
-	if(booksEqual(this.idToBook[newbook.isbn], newbook)){
-	    this.idToBook[newbook.isbn].nCopies = this.idToBook[newbook.isbn].nCopies + newbook.nCopies;
-	    newbook = this.idToBook[newbook.isbn];
-	} else {
-	    return Errors.errResult('error', 'BAD_REQ');
+	let errorEq: Errors.Result<void> = booksEqual(this.idToBook[newbook.isbn], newbook);
+	if(errorEq.isOk === false){
+	    return errorEq;
 	}
+	this.idToBook[newbook.isbn].nCopies = this.idToBook[newbook.isbn].nCopies + newbook.nCopies;
+	newbook = this.idToBook[newbook.isbn];
     }
 
 
@@ -121,7 +121,7 @@ export class LendingLibrary {
     //TODO
 
     if(typeof req.search !== "string"){
-    	      return Errors.errResult('bad type', 'BAD_TYPE', 'search');
+    	      return Errors.errResult('property search must be of type string', 'BAD_TYPE', 'search');
     }
 
     var it: string[] = divideString(req.search);
@@ -139,19 +139,19 @@ export class LendingLibrary {
 
 
     
-    /*if(it.length === 0){
-        return Errors.errResult('Missing', 'BAD_REQ', 'search');
-    }*/
+    if(it.length === 0){
+        return Errors.errResult('search string must contain 1+ words of length > 1', 'BAD_REQ', 'search');
+    }
 
-    var words: number = 0;
+    //var words: number = 0;
 
     var start: boolean = false;
     var arr: string[] = [];
     for(const x of it){
-    	if(x.length <= 1){
+    	/*if(x.length <= 1){
 	    continue;
-	}
-	words++;
+	}*/
+	//words++;
     	//console.log(arr);
     	/*if(typeof this.wordToId[x.toLowerCase()] === "undefined"){
 	       return Errors.errResult('Bad req', 'BAD_REQ', 'search');
@@ -159,14 +159,17 @@ export class LendingLibrary {
         if(start === false && typeof this.wordToId[x.toLowerCase()] !== "undefined"){
 	       start = true;
 	       arr = this.wordToId[x.toLowerCase()];
-	} else if(typeof this.wordToId[x.toLowerCase()] !== "undefined"){
+	}else if(typeof this.wordToId[x.toLowerCase()] !== "undefined"){
 	       arr = arr.filter(e => this.wordToId[x.toLowerCase()].includes(e));
+	} else {
+	       arr = [];
+	       break;
 	}
     }
 
-    if(words <= 0){
+    /*if(words <= 0){
         return Errors.errResult('bad req', 'BAD_REQ', 'search');
-    }
+    }*/
 
     var ret: XBook[] = [];
 
@@ -190,15 +193,23 @@ export class LendingLibrary {
     //console.log(this.idToBook);
     //console.log("\n");
     //console.log(req);
-    if(typeof req.isbn === "undefined"){
+
+    let reqCheck: Errors.Result<void> = verifyPatronReq(req);
+    if(reqCheck.isOk === false){
+        return reqCheck;
+    }
+    /*if(typeof req.isbn === "undefined"){
         return Errors.errResult('missing args', 'MISSING', 'isbn');
     }
     if(typeof req.patronId === "undefined"){
         return Errors.errResult('missing args', 'MISSING', 'patronId');
-    }
+    }*/
     
-    if(typeof this.idToBook[req.isbn] === "undefined" || this.idToBook[req.isbn].nCopies <= 0){
-        return Errors.errResult('bad args', 'BAD_REQ', 'isbn');
+    if(typeof this.idToBook[req.isbn] === "undefined" /*|| this.idToBook[req.isbn].nCopies <= 0*/){
+        return Errors.errResult('unknown book ${req.isbn}', 'BAD_REQ', 'isbn');
+    }
+    if(this.idToBook[req.isbn].nCopies <= 0){
+        return Errors.errResult('no copies of book ${req.isbn} are available', 'BAD_REQ', 'isbn');
     }
 
     if(typeof this.patronToBooks[req.patronId] === "undefined"){
@@ -206,7 +217,7 @@ export class LendingLibrary {
     }
 
     if(this.patronToBooks[req.patronId].includes(req.isbn)){
-	return Errors.errResult('bad args', 'BAD_REQ', 'isbn');
+	return Errors.errResult('patron ${patronId} already has book ${req.isbn} checked out', 'BAD_REQ', 'isbn');
     }
     this.patronToBooks[req.patronId].push(req.isbn);
 
@@ -231,24 +242,28 @@ export class LendingLibrary {
   returnBook(req: Record<string, any>) : Errors.Result<void> {
     //TODO
     //console.log(req);
-    if(typeof req.patronId === "undefined"){
+    let reqCheck: Errors.Result<void> = verifyPatronReq(req);
+    if(reqCheck.isOk === false){
+        return reqCheck;
+    }
+    /*if(typeof req.patronId === "undefined"){
         return Errors.errResult('missing args', 'MISSING', 'patronId');
     }
     if(typeof req.isbn === "undefined"){
         return Errors.errResult('missing args', 'MISSING', 'patronId');
-    }
+    }*/
 
     if(typeof this.idToBook[req.isbn] === "undefined"){
-        return Errors.errResult('bad arg', 'BAD_REQ', 'isbn');
+        return Errors.errResult('book ${req.isbn} does not exist', 'BAD_REQ', 'isbn');
     }
 
-    if(typeof this.patronToBooks[req.patronId] === "undefined"){
-        return Errors.errResult('missing book', 'BAD_REQ', 'patronId');
+    if(typeof this.patronToBooks[req.patronId] === "undefined" || this.patronToBooks[req.patronId].indexOf(req.isbn) === -1){
+        return Errors.errResult('no checkout of book ${req.isbn} by patron ${req.patronId}', 'BAD_REQ', 'patronId');
     }
 
-    if(this.patronToBooks[req.patronId].indexOf(req.isbn) === -1){
+    /*if(this.patronToBooks[req.patronId].indexOf(req.isbn) === -1){
         return Errors.errResult('missing book', 'BAD_REQ', 'patronId');
-    }
+    }*/
 
     this.patronToBooks[req.patronId] = this.patronToBooks[req.patronId].filter(e => e != req.isbn);
     this.bookToPatrons[req.isbn] = this.bookToPatrons[req.isbn].filter(e => e != req.patronId);
@@ -265,50 +280,74 @@ export class LendingLibrary {
 
 //TODO: add domain-specific utility functions or classes.
 
+function verifyPatronReq(req: Record<string, any>): Errors.Result<void> {
+	 let ret: Errors.ErrResult = new Errors.ErrResult();
+
+	 if(typeof req.isbn === "undefined"){
+	     ret = ret.addError(Errors.errResult('property isbn is required', 'MISSING', 'isbn'));
+	 } else if(typeof req.isbn !== "string"){
+	     ret = ret.addError(Errors.errResult('property isbn must be of type string', 'BAD_TYPE', 'isbn'));
+	 }
+
+	 if(typeof req.patronId === "undefined"){
+	     ret = ret.addError(Errors.errResult('property patronId is required', 'MISSING', 'patronId'));
+	 } else if(typeof req.patronId !== "string"){
+	     ret = ret.addError(Errors.errResult('property patronId  must be of type string', 'BAD_TYPE', 'patronId'));
+	 }
+
+	 if(ret.errors.length > 0){
+	     return ret;
+	 }
+
+         return Errors.okResult(undefined);
+}
+
 function verifyReq(req: Record<string, any>): Errors.Result<XBook> {
-	 if(typeof req.title === "undefined"){
-    	  return Errors.errResult('error', 'MISSING', 'title');
+    let errorRet: Errors.ErrResult[] = [];
+
+    if(typeof req.title === "undefined"){
+    	  errorRet.push(Errors.errResult('property title is required', 'MISSING', 'title'));
     }else if(typeof req.title !== "string"){
-    	  return Errors.errResult('error', 'BAD_TYPE', 'title');
+    	  errorRet.push(Errors.errResult('property title must be of type string', 'BAD_TYPE', 'title'));
     }
 
     //console.log(req.authors);
     //console.log(typeof req.authors == typeof []);
 
     if(typeof req.authors === "undefined"){
-    	  return Errors.errResult('error', 'MISSING', 'authors');
+    	  errorRet.push(Errors.errResult('property authors is required', 'MISSING', 'authors'));
     }else if((typeof req.authors !== typeof []) || req.authors.length <= 0){
-    	  return Errors.errResult('error', 'BAD_TYPE', 'authors');
+    	  errorRet.push(Errors.errResult('property authors must be of type string[]', 'BAD_TYPE', 'authors'));
     }else{
 	for(var e of req.authors){
 		if(typeof e !== "string"){
-			  return Errors.errResult('error', 'BAD_TYPE', 'authors');
+			  errorRet.push(Errors.errResult('property authors must be of type string[]', 'BAD_TYPE', 'authors'));
 		}
 	}
     }
 
     if(typeof req.isbn === "undefined"){
-    	  return Errors.errResult('error', 'MISSING', 'isbn');
+    	  errorRet.push(Errors.errResult('property isbn is required', 'MISSING', 'isbn'));
     } else if(typeof req.isbn !== "string"){
-      	  return Errors.errResult('error', 'BAD_TYPE', 'isbn');
+      	  errorRet.push(Errors.errResult('property isbn must be of type string', 'BAD_TYPE', 'isbn'));
     }
 
     if(typeof req.pages === "undefined"){
-    	  return Errors.errResult('error', 'MISSING', 'pages');
+    	  errorRet.push(Errors.errResult('property pages is required', 'MISSING', 'pages'));
     } else if(typeof req.pages !== "number"){
-      	  return Errors.errResult('error', 'BAD_TYPE', 'pages');
+      	  errorRet.push(Errors.errResult('property pages must be of type number', 'BAD_TYPE', 'pages'));
     }
 
     if(typeof req.year === "undefined"){
-    	  return Errors.errResult('error', 'MISSING', 'year');
+    	  errorRet.push(Errors.errResult('property year is required', 'MISSING', 'year'));
     } else if(typeof req.year !== "number"){
-      	  return Errors.errResult('error', 'BAD_TYPE', 'year');
+      	  errorRet.push(Errors.errResult('property year must be of type number', 'BAD_TYPE', 'year'));
     }
 
     if(typeof req.publisher === "undefined"){
-    	  return Errors.errResult('error', 'MISSING', 'publisher');
+    	  errorRet.push(Errors.errResult('property publisher is required', 'MISSING', 'publisher'));
     } else if(typeof req.publisher !== "string"){
-    	  return Errors.errResult('error', 'BAD_TYPE', 'publisher');
+    	  errorRet.push(Errors.errResult('property publisher must be of type string', 'BAD_TYPE', 'publisher'));
     }
 
     var newbook: XBook = {
@@ -324,23 +363,60 @@ function verifyReq(req: Record<string, any>): Errors.Result<XBook> {
     if(typeof req.nCopies === "number"){
     	//console.log("number");
     	if(req.nCopies <= 0 || !Number.isInteger(req.nCopies)){
-	    return Errors.errResult('error', 'BAD_REQ', 'nCopies');
+	    errorRet.push(Errors.errResult('property nCopies must be an integer', 'BAD_REQ', 'nCopies'));
 	}
     	newbook.nCopies = req.nCopies;
     }else if(typeof req.nCopies !== "undefined"){
     	  //console.log("not number");
-    	  return Errors.errResult('error', 'BAD_TYPE', 'nCopies');
+    	  errorRet.push(Errors.errResult('property nCopies must be of type number', 'BAD_TYPE', 'nCopies'));
     }
+
+    let ret: Errors.ErrResult = new Errors.ErrResult();
+
+    if(errorRet.length > 0){
+        for(const i of errorRet)
+	{
+	    //console.log(i);
+	    ret = ret.addError(i);
+	}
+	return ret;
+    }
+    
 
     return Errors.okResult(newbook);
     
 }
 
-function booksEqual(book1: Book, book2: Book): boolean {
-   if(book1.isbn === book2.isbn && (book1.authors.length == book2.authors.length && book1.authors.every((V,i) => V == book2.authors[i])) && book1.title == book2.title && book1.pages == book2.pages && book1.year == book2.year && book1.publisher == book2.publisher){
-     	return true;
-   }
-   return false;
+function booksEqual(book1: Book, book2: Book): Errors.Result<void> {
+     //if(book1.isbn === book2.isbn && (book1.authors.length == book2.authors.length && book1.authors.every((V,i) => V == book2.authors[i])) && book1.title == book2.title && book1.pages == book2.pages && book1.year == book2.year && book1.publisher == book2.publisher){
+     		  // return true;
+   //}
+    let errorRet: Errors.ErrResult = new Errors.ErrResult();
+
+    if(book1.title !== book2.title){
+        errorRet = errorRet.addError(Errors.errResult('inconsistent title data', 'BAD_REQ', 'title'));
+    }
+    if(book1.authors.length !== book2.authors.length || book1.authors.some((V,i) => V !== book2.authors[i])){
+    	errorRet = errorRet.addError(Errors.errResult('inconsistent authors data', 'BAD_REQ', 'authors'));
+    }
+    if(book1.isbn !== book2.isbn){
+        errorRet = errorRet.addError(Errors.errResult('inconsistent isbn data', 'BAD_REQ', 'isbn'));
+    }
+    if(book1.pages !== book2.pages){
+        errorRet = errorRet.addError(Errors.errResult('inconsistent pages data', 'BAD_REQ', 'pages'));
+    }
+    if(book1.year !== book2.year){
+        errorRet = errorRet.addError(Errors.errResult('inconsistent year data', 'BAD_REQ', 'year'));
+    }
+    if(book1.publisher !== book2.publisher){
+        errorRet = errorRet.addError(Errors.errResult('inconsistent publisher data', 'BAD_REQ','year'));
+    }
+
+    if(errorRet.errors.length > 0){
+        return errorRet;
+    }
+
+   return Errors.okResult(undefined);
 }
 
 
@@ -355,5 +431,5 @@ function divideString( x: string, y?: string[]): string[] {
         ret.push(...y);
     }
 
-    return ret;
+    return ret.filter(element => element.length > 1);
 }
