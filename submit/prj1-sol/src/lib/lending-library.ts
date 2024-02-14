@@ -124,7 +124,7 @@ export class LendingLibrary {
     	      return Errors.errResult('bad type', 'BAD_TYPE', 'search');
     }
 
-    var it: string[] = req.search.split(/[\W ]+/);
+    var it: string[] = divideString(req.search);
     //console.log(it);
     //var it: string[] = [];
     
