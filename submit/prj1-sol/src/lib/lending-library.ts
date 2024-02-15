@@ -327,7 +327,7 @@ function verifyReq(req: Record<string, any>): Errors.Result<XBook> {
     }else if((typeof req.authors !== typeof []) || req.authors.length <= 0){
     	  errorRet.push(Errors.errResult('property authors must be of type string[]', 'BAD_TYPE', 'authors'));
     }else{
-	for(var e of req.authors){
+	for(const e of req.authors){
 		if(typeof e !== "string"){
 			  errorRet.push(Errors.errResult('property authors must be of type string[]', 'BAD_TYPE', 'authors'));
 		}
