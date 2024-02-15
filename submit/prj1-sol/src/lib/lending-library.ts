@@ -72,16 +72,16 @@ export class LendingLibrary {
   addBook(req: Record<string, any>): Errors.Result<XBook> {
     //TODO
  
-    var errorcheck: Errors.Result<XBook> = verifyReq(req);
+    const errorcheck: Errors.Result<XBook> = verifyReq(req);
     if(errorcheck.isOk === false){
         return errorcheck;
     }
 
-    var newbook: XBook = errorcheck.val;
+    let newbook: XBook = errorcheck.val;
     
     
     if(typeof this.idToBook[newbook.isbn] === "undefined"){
-    	var wordsDivided: string[] = divideString(newbook.title, newbook.authors);
+    	const wordsDivided: string[] = divideString(newbook.title, newbook.authors);
 	//console.log(req);
 	//console.log('\n\n\n');
 	//console.log(wordsDivided);
@@ -89,7 +89,7 @@ export class LendingLibrary {
 	     if(x.length <= 1){
 	         continue;
 	     }
-	     if(typeof this.wordToId[x.toLowerCase()] == "undefined"){
+	     if(typeof this.wordToId[x.toLowerCase()] === "undefined"){
 	         this.wordToId[x.toLowerCase()] = [newbook.isbn];
 	     }else if(!this.wordToId[x.toLowerCase()].includes(req.isbn)){
 		 this.wordToId[x.toLowerCase()].push(newbook.isbn);
@@ -98,7 +98,7 @@ export class LendingLibrary {
 	this.idToBook[newbook.isbn] = newbook;
     
     } else{
-	let errorEq: Errors.Result<void> = booksEqual(this.idToBook[newbook.isbn], newbook);
+	const errorEq: Errors.Result<void> = booksEqual(this.idToBook[newbook.isbn], newbook);
 	if(errorEq.isOk === false){
 	    return errorEq;
 	}
@@ -130,7 +130,7 @@ export class LendingLibrary {
     	      return Errors.errResult('property search must be of type string', 'BAD_TYPE', 'search');
     }
 
-    var it: string[] = divideString(req.search);
+    const it: string[] = divideString(req.search);
     //console.log(it);
     //var it: string[] = [];
     
@@ -151,8 +151,8 @@ export class LendingLibrary {
 
     //var words: number = 0;
 
-    var start: boolean = false;
-    var arr: string[] = [];
+    let start: boolean = false;
+    let arr: string[] = [];
     for(const x of it){
     	/*if(x.length <= 1){
 	    continue;
@@ -177,7 +177,7 @@ export class LendingLibrary {
         return Errors.errResult('bad req', 'BAD_REQ', 'search');
     }*/
 
-    var ret: XBook[] = [];
+    let ret: XBook[] = [];
 
     for(const x of arr){
         ret.push(this.idToBook[x]);
@@ -200,7 +200,7 @@ export class LendingLibrary {
     //console.log("\n");
     //console.log(req);
 
-    let reqCheck: Errors.Result<void> = verifyPatronReq(req);
+    const reqCheck: Errors.Result<void> = verifyPatronReq(req);
     if(reqCheck.isOk === false){
         return reqCheck;
     }
@@ -250,7 +250,7 @@ export class LendingLibrary {
   returnBook(req: Record<string, any>) : Errors.Result<void> {
     //TODO
     //console.log(req);
-    let reqCheck: Errors.Result<void> = verifyPatronReq(req);
+    const reqCheck: Errors.Result<void> = verifyPatronReq(req);
     if(reqCheck.isOk === false){
         return reqCheck;
     }
@@ -358,7 +358,7 @@ function verifyReq(req: Record<string, any>): Errors.Result<XBook> {
     	  errorRet.push(Errors.errResult('property publisher must be of type string', 'BAD_TYPE', 'publisher'));
     }
 
-    var newbook: XBook = {
+    let newbook: XBook = {
     	     isbn: req.isbn,
 	     title: req.title,
 	     authors: req.authors,
@@ -434,7 +434,7 @@ function booksEqual(book1: Book, book2: Book): Errors.Result<void> {
 //TODO: add general utility functions or classes.
 
 function divideString( x: string, y?: string[]): string[] {
-    var ret: string[] = x.split(/[\W ]+/);
+    let ret: string[] = x.split(/[\W ]+/);
     if(typeof y !== "undefined"){
     	//y.map(element => element.toLowerCase());
 	for(const i of y){
