@@ -212,18 +212,21 @@ export class LendingLibrary {
     }*/
     
     if(typeof this.idToBook[req.isbn] === "undefined" /*|| this.idToBook[req.isbn].nCopies <= 0*/){
-        return Errors.errResult('unknown book ${req.isbn}', 'BAD_REQ', 'isbn');
+        return Errors.errResult(`unknown book ${req.isbn}`, 'BAD_REQ', 'isbn');
     }
-    if(this.idToBook[req.isbn].nCopies <= 0){
-        return Errors.errResult('no copies of book ${req.isbn} are available', 'BAD_REQ', 'isbn');
+    if(typeof this.bookToPatrons[req.isbn] !== "undefined" && this.idToBook[req.isbn].nCopies <= this.bookToPatrons[req.isbn].length){
+        return Errors.errResult(`no copies of book ${req.isbn} are available`, 'BAD_REQ', 'isbn');
     }
 
     if(typeof this.patronToBooks[req.patronId] === "undefined"){
         this.patronToBooks[req.patronId] = [];
     }
+    if(typeof this.bookToPatrons[req.isbn] === "undefined"){
+        this.bookToPatrons[req.isbn] = [];
+    }
 
     if(this.patronToBooks[req.patronId].includes(req.isbn)){
-	return Errors.errResult('patron ${patronId} already has book ${req.isbn} checked out', 'BAD_REQ', 'isbn');
+	return Errors.errResult(`patron ${req.patronId} already has book ${req.isbn} checked out`, 'BAD_REQ', 'isbn');
     }
     this.patronToBooks[req.patronId].push(req.isbn);
 
@@ -231,7 +234,6 @@ export class LendingLibrary {
         this.bookToPatrons[req.isbn] = [];
     }
     this.bookToPatrons[req.isbn].push(req.patronId);
-    this.idToBook[req.isbn].nCopies--;
     
 
 
@@ -260,11 +262,11 @@ export class LendingLibrary {
     }*/
 
     if(typeof this.idToBook[req.isbn] === "undefined"){
-        return Errors.errResult('book ${req.isbn} does not exist', 'BAD_REQ', 'isbn');
+        return Errors.errResult(`book ${req.isbn} does not exist`, 'BAD_REQ', 'isbn');
     }
 
     if(typeof this.patronToBooks[req.patronId] === "undefined" || this.patronToBooks[req.patronId].indexOf(req.isbn) === -1){
-        return Errors.errResult('no checkout of book ${req.isbn} by patron ${req.patronId}', 'BAD_REQ', 'patronId');
+        return Errors.errResult(`no checkout of book ${req.isbn} by patron ${req.patronId}`, 'BAD_REQ', 'patronId');
     }
 
     /*if(this.patronToBooks[req.patronId].indexOf(req.isbn) === -1){
@@ -273,7 +275,7 @@ export class LendingLibrary {
 
     this.patronToBooks[req.patronId] = this.patronToBooks[req.patronId].filter(e => e != req.isbn);
     this.bookToPatrons[req.isbn] = this.bookToPatrons[req.isbn].filter(e => e != req.patronId);
-    this.idToBook[req.isbn].nCopies++;
+    //this.idToBook[req.isbn].nCopies++;
     
 
     return Errors.okResult(undefined);  //placeholder
@@ -400,22 +402,22 @@ function booksEqual(book1: Book, book2: Book): Errors.Result<void> {
     let errorRet: Errors.ErrResult = new Errors.ErrResult();
 
     if(book1.title !== book2.title){
-        errorRet = errorRet.addError(Errors.errResult('inconsistent title data', 'BAD_REQ', 'title'));
+        errorRet = errorRet.addError(Errors.errResult(`inconsistent title data for book ${book1.isbn}`, 'BAD_REQ', 'title'));
     }
     if(book1.authors.length !== book2.authors.length || book1.authors.some((V,i) => V !== book2.authors[i])){
-    	errorRet = errorRet.addError(Errors.errResult('inconsistent authors data', 'BAD_REQ', 'authors'));
+    	errorRet = errorRet.addError(Errors.errResult(`inconsistent authors data for book ${book1.isbn}`, 'BAD_REQ', 'authors'));
     }
     if(book1.isbn !== book2.isbn){
-        errorRet = errorRet.addError(Errors.errResult('inconsistent isbn data', 'BAD_REQ', 'isbn'));
+        errorRet = errorRet.addError(Errors.errResult(`inconsistent isbn data for book ${book1.isbn}`, 'BAD_REQ', 'isbn'));
     }
     if(book1.pages !== book2.pages){
-        errorRet = errorRet.addError(Errors.errResult('inconsistent pages data', 'BAD_REQ', 'pages'));
+        errorRet = errorRet.addError(Errors.errResult(`inconsistent pages data for book ${book1.isbn}`, 'BAD_REQ', 'pages'));
     }
     if(book1.year !== book2.year){
-        errorRet = errorRet.addError(Errors.errResult('inconsistent year data', 'BAD_REQ', 'year'));
+        errorRet = errorRet.addError(Errors.errResult(`inconsistent year data for book ${book1.isbn}`, 'BAD_REQ', 'year'));
     }
     if(book1.publisher !== book2.publisher){
-        errorRet = errorRet.addError(Errors.errResult('inconsistent publisher data', 'BAD_REQ','year'));
+        errorRet = errorRet.addError(Errors.errResult(`inconsistent publisher data for book ${book1.isbn}`, 'BAD_REQ','year'));
     }
 
     if(errorRet.errors.length > 0){
