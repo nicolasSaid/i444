@@ -344,12 +344,16 @@ function verifyReq(req: Record<string, any>): Errors.Result<XBook> {
     	  errorRet.push(Errors.errResult('property pages is required', 'MISSING', 'pages'));
     } else if(typeof req.pages !== "number"){
       	  errorRet.push(Errors.errResult('property pages must be of type number', 'BAD_TYPE', 'pages'));
+    } else if(!Number.isInteger(req.pages) || req.pages < 0){
+          errorRet.push(Errors.errResult('property pages must be an integer > 0', 'BAD_REQ', 'pages'));
     }
 
     if(typeof req.year === "undefined"){
     	  errorRet.push(Errors.errResult('property year is required', 'MISSING', 'year'));
     } else if(typeof req.year !== "number"){
       	  errorRet.push(Errors.errResult('property year must be of type number', 'BAD_TYPE', 'year'));
+    } else if(!Number.isInteger(req.year) || req.year < 0){
+          errorRet.push(Errors.errResult('proerty year must be an integer > 0', 'BAD_REQ', 'year'));
     }
 
     if(typeof req.publisher === "undefined"){
