@@ -63,8 +63,10 @@ export class LendingLibrary {
 	}
     }
     if(typeof book.nCopies === "undefined"){
+    	      //console.log("no ncopies input");
     	      book.nCopies = 1;
     }
+    //console.log(book.nCopies);
     let resultmsg;
     if(ret.isOk === true){
     		resultmsg = await this.dao.add(book, true, ret.val);
@@ -132,6 +134,8 @@ export class LendingLibrary {
 		     return Errors.errResult("book does not exist", {code: 'BAD_REQ'});
 	}
 	if(patrons.isOk === true){
+		//console.log(patrons.val);
+		//console.log(book.val.nCopies);
 		if(book.val.nCopies === patrons.val.length){
 			return Errors.errResult("no copies available", {code: 'BAD_REQ'});
 		}

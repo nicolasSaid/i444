@@ -132,12 +132,15 @@ export class LibraryDao {
   	if(exists && typeof oldBook !== "undefined"){
 		//const og = await this.has(book.isbn);
 		//if(og.isOk === true){
+		
 		retBook.nCopies = retBook.nCopies + oldBook.nCopies
-		const newCopies = oldBook.nCopies + book.nCopies;
+		//const newCopies = oldBook.nCopies + book.nCopies;
+		//console.log(newCopies);
+		//console.log(retBook.nCopies);
 		await this.isbnBooks.updateOne(
 		      {isbn: book.isbn},
 		      {
-			$set: { nCopies: newCopies}
+			$set: { nCopies: retBook.nCopies}
 		      }
 		);
 		//}
