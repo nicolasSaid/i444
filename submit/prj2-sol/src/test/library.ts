@@ -6,7 +6,7 @@ import { assert, expect } from 'chai';
 
 const BOOK_1 = BOOKS[0];
 
-describe.skip('library types', () => {
+describe('library types', () => {
 
   describe('Book validation', () => {
     it('a good book is valid', () => {
@@ -35,7 +35,11 @@ describe.skip('library types', () => {
     });
 
     it('having no authors is invalid', () => {
-      assert.fail('TODO');
+       const req: Record<string, any> = {...BOOK_1 };
+       req.authors = [];
+       const result = Lib.validate('addBook', req);
+       assert(result.isOk === false);
+       expect(result.errors.length).to.be.gt(0);
     });
     
     it('an empty author is invalid', () => {
@@ -47,7 +51,28 @@ describe.skip('library types', () => {
     });
     
     it('badly typed fields makes a good book invalid', () => {
-      assert.fail('TODO');
+       for (const k of [ 'isbn', 'title', 'publisher']) {
+	  const req: Record<string, any> = {...BOOK_1};
+	  const key = k as keyof typeof req;
+	  req[key] = 1;
+	  const result = Lib.validate('findBooks', req);
+	  assert(result.isOk === false);
+	  expect(result.errors.length).to.be.gt(0);
+      }
+      for (const k of [ 'pages', 'year', 'nCopies']) {
+	  const req: Record<string, any> = {...BOOK_1};
+	  const key = k as keyof typeof req;
+	  req[key] = "xx";
+	  const result = Lib.validate('findBooks', req);
+	  assert(result.isOk === false);
+	  expect(result.errors.length).to.be.gt(0);
+      }
+      const req: Record<string, any> = {...BOOK_1};
+      req.authors = [1, 2, 3];
+      const result = Lib.validate('findBooks', req);
+      assert(result.isOk === false);
+      expect(result.errors.length).to.be.gt(0);
+      
     });
 
     it('empty string fields makes a good book invalid', () => {

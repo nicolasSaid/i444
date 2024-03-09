@@ -24,13 +24,13 @@ const MSGS = {
 //   publisher: a non-empty string.
 //   nCopies: an optional positive integer
 const Book =  z.object({
-  isbn: z.string(),
-  title: z.string(),
-  authors: z.string().array(),
-  pages: z.number(),
-  year: z.number(),
-  publisher: z.string(),
-  nCopies: z.number(),
+  isbn: z.string().regex(/^((\d){3}\-){3}(\d){1}$/),
+  title: z.string().min(1),
+  authors: z.string().min(1).array().min(1),
+  pages: z.number().positive(),
+  year: z.number().gte(GUTENBERG_YEAR).lte(NOW_YEAR),
+  publisher: z.string().min(1),
+  nCopies: z.number().int().positive().optional(),
 });
 
 export type Book = z.infer<typeof Book>;
@@ -43,9 +43,9 @@ export type XBook = z.infer<typeof XBook>;
 //   index: an optional non-negative integer.
 //   count: an optional non-negative integer.
 const Find = z.object({
-  search: z.string(),
-  index: z.number(),
-  count: z.number(),
+  search: z.string().regex(/.*\w{2,}.*/),
+  index: z.number().positive().optional(),
+  count: z.number().positive().optional(),
 });
 export type Find = z.infer<typeof Find>;
 
@@ -53,8 +53,8 @@ export type Find = z.infer<typeof Find>;
 //   isbn: a ISBN-10 string of the form ddd-ddd-ddd-d.
 //   patronId: a non-empty string.
 const Lend = z.object({
-  isbn: z.string(),
-  patronId: z.string(),
+  isbn: z.string().regex(/^((\d){3}\-){3}(\d){1}$/),
+  patronId: z.string().min(1),
 });
 export type Lend = z.infer<typeof Lend>;
 

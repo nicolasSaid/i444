@@ -15,7 +15,7 @@ import { assert, expect } from 'chai';
 //to ensure that typescript narrows result correctly
 
 
-describe.skip('lending library', () => {
+describe('lending library', () => {
 
   let memDao : MemDao;
   let library: LendingLibrary;
@@ -118,7 +118,7 @@ describe.skip('lending library', () => {
 
     it('must catch empty authors', async () => {
       const book = BOOKS[0];
-      const book1 = { ...book };
+      const book1  = { ...book };
       book1.authors = [];
       const bookResult = await library.addBook(book1);
       assert(bookResult.isOk === false);

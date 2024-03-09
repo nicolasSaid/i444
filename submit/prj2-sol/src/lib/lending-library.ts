@@ -27,7 +27,8 @@ export class LendingLibrary {
 
   /** clear out underlying db */
   async clear() : Promise<Errors.Result<void>> {
-    return Errors.errResult('TODO');
+  	const ret = await this.dao.clear();
+	return ret;
   }
 
   /** Add one-or-more copies of book represented by req to this library.
@@ -48,7 +49,30 @@ export class LendingLibrary {
    *      inconsistent with the data already present.
    */
   async addBook(req: Record<string, any>): Promise<Errors.Result<Lib.XBook>> {
-    return Errors.errResult('TODO');
+    const bookResult = Lib.validate<Lib.Book>('addBook', req);
+    if(bookResult.isOk === false){
+        return bookResult;
+    }
+    const book = bookResult.val;
+
+    const ret = await this.dao.has(req.isbn);
+    if(ret.isOk === true){
+    	const diff = compareBook(bookResult.val, ret.val);
+	if(diff){
+		return Errors.errResult(`book already exists with differnet ${diff}`, {code: 'BAD_REQ'}); 
+	}
+    }
+    if(typeof book.nCopies === "undefined"){
+    	      book.nCopies = 1;
+    }
+    let resultmsg;
+    if(ret.isOk === true){
+    		resultmsg = await this.dao.add(book, true, ret.val);
+    }
+    else{
+		resultmsg = await this.dao.add(book, false);
+    }
+    return resultmsg;
   }
 
   /** Return all books whose authors and title fields contain all
@@ -73,7 +97,14 @@ export class LendingLibrary {
   async findBooks(req: Record<string, any>)
     : Promise<Errors.Result<Lib.XBook[]>>
   {
-    return Errors.errResult('TODO');
+  const bookResult = Lib.validate<Lib.Find>('findBooks', req);
+    if(bookResult.isOk === false){
+        return bookResult;
+    }
+    let x: string = req.search;
+    x = x.split(/[\W]+/).filter((word) => word.length > 1).map(y => '"' + y + '"').join(" ");
+
+    return await this.dao.search(x, req.count, req.index);
   }
 
 
@@ -88,7 +119,38 @@ export class LendingLibrary {
    *      patron already has a copy of the same book checked out
    */
   async checkoutBook(req: Record<string, any>) : Promise<Errors.Result<void>> {
-    return Errors.errResult('TODO');
+  	const checkResult = Lib.validate<Lib.Lend>('checkoutBook', req);
+	if(checkResult.isOk === false){
+		return checkResult;
+	}
+
+	const search = '"' + req.isbn + '"';
+
+	const book = await this.dao.has(req.isbn);
+	const patrons = await this.dao.searchIsbn(search);
+	if(book.isOk === false){
+		     return Errors.errResult("book does not exist", {code: 'BAD_REQ'});
+	}
+	if(patrons.isOk === true){
+		if(book.val.nCopies === patrons.val.length){
+			return Errors.errResult("no copies available", {code: 'BAD_REQ'});
+		}
+		for(const k of patrons.val){
+			  if(k.patron === req.patronId){
+			  	      return Errors.errResult("patron already took out book", {code: 'BAD_REQ'});     
+			  }
+		}
+	}
+
+	const pater = await this.dao.hasPatron(req.patronId);
+	
+	if(pater.isOk === true){
+	     await this.dao.addPatron(req.patronId, req.isbn, pater.val);
+	}else{
+	     await this.dao.addPatron(req.patronId, req.isbn);
+	}
+
+  	return Errors.okResult(undefined);
   }
 
   /** Set up patron req.patronId to returns book req.isbn.
@@ -101,7 +163,32 @@ export class LendingLibrary {
    *    no checkout of the book by patronId.
    */
   async returnBook(req: Record<string, any>) : Promise<Errors.Result<void>> {
-    return Errors.errResult('TODO');
+  	const checkResult = Lib.validate<Lib.Lend>('returnBook', req);
+	if(checkResult.isOk === false){
+		return checkResult;
+	}
+
+	const pater = await this.dao.hasPatron(req.patronId);
+	if(pater.isOk === false){
+		      return Errors.errResult("patron does not exist", {code: 'BAD_REQ'});
+	}
+
+	if(!pater.val.books.includes(req.isbn)){
+		return Errors.errResult("patron does not have book", {code: 'BAD_REQ'});
+	}
+
+	const patron = pater.val;
+	patron.books = patron.books.filter((word) => word != req.isbn);
+	await this.dao.return(patron);
+
+	return Errors.okResult(undefined);
+	
+
+	
+
+
+
+    //return Errors.errResult('TODO');
   }
 
   //add class code as needed
